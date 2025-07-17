@@ -1,0 +1,11 @@
+serviceAccount:
+  create: true
+  name: "k8s-access-service-account"
+
+clusterRole:
+  create: true
+  name: "k8s-access-role"
+
+clusterRoleBinding:
+  create: true
+  name: "k8s-access-rolebinding"

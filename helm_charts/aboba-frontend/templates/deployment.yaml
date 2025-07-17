@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aboba-frontend.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "aboba-frontend.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "aboba-frontend.name" . }}
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/frontend-site.conf
+              subPath: frontend-site.conf
+      imagePullSecrets:
+        - name: java-app-github-registry
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "aboba-frontend.fullname" . }}-nginx-config

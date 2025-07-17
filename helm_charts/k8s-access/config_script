@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# === Настройки ===
+SA_NAME="k8s-access-service-account"        # имя сервис-аккаунта
+NAMESPACE="actions"            # namespace
+KUBECONFIG_FILE="k8s.kubeconfig"
+CONTEXT_NAME="kind-java-app-cluster"
+
+set -e
+
+echo "🔍 Получение секрета сервис-аккаунта..."
+SECRET_NAME=$(kubectl get sa "$SA_NAME" -n "$NAMESPACE" -o jsonpath='{.secrets[0].name}')
+TOKEN=$(kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" -o jsonpath='{.data.token}' | base64 -d)
+CA_CERT=$(kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" -o jsonpath='{.data.ca\.crt}' | base64 -d)
+
+echo "🔍 Получение информации о кластере..."
+CLUSTER_NAME=$(kubectl config view -o jsonpath='{.contexts[?(@.name=="'$(kubectl config current-context)'")].context.cluster}')
+CLUSTER_SERVER=https://kubernetes.default
+
+echo "📄 Генерация kubeconfig..."
+
+CA_FILE=$(mktemp)
+echo "$CA_CERT" > "$CA_FILE"
+rm -f "$KUBECONFIG_FILE"
+
+kubectl config --kubeconfig="$KUBECONFIG_FILE" set-cluster "$CLUSTER_NAME" \
+  --server="$CLUSTER_SERVER" \
+  --certificate-authority="$CA_FILE" \
+  --embed-certs=true
+
+kubectl config --kubeconfig="$KUBECONFIG_FILE" set-credentials "$SA_NAME" \
+  --token="$TOKEN"
+
+kubectl config --kubeconfig="$KUBECONFIG_FILE" set-context "$CONTEXT_NAME" \
+  --cluster="$CLUSTER_NAME" \
+  --user="$SA_NAME" \
+  --namespace="$NAMESPACE"
+
+kubectl config --kubeconfig="$KUBECONFIG_FILE" use-context "$CONTEXT_NAME"
+
+rm -f "$CA_FILE"
+
+echo "✅ kubeconfig успешно создан: $KUBECONFIG_FILE"
+echo "📎 Пример: kubectl --kubeconfig=$KUBECONFIG_FILE get pods"

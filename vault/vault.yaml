@@ -1,0 +1,56 @@
+apiVersion: vault.banzaicloud.com/v1alpha1
+kind: Vault
+metadata:
+  name: aboba-vault
+  namespace: vault
+spec:
+  size: 1
+  image: hashicorp/vault:1.15.3
+  bankVaultsImage: ghcr.io/bank-vaults/bank-vaults:latest
+  serviceType: ClusterIP
+  unsealConfig:
+    kubernetes:
+      secretNamespace: vault
+      secretName: aboba-unseal-keys
+  config:
+    storage:
+      file:
+        path: /vault/data
+    listener:
+      tcp:
+        address: "[::]:8200"
+        tls_disable: true
+    ui: true
+    disable_mlock: true
+    default_lease_ttl: "168h"
+    max_lease_ttl: "720h"
+    api_addr: http://$(POD_IP):8200
+---
+
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: vault
+  name: vault-secret-reader
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-secret-reader-binding
+  namespace: vault
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: vault
+roleRef:
+  kind: Role
+  name: vault-secret-reader
+  apiGroup: rbac.authorization.k8s.io
+

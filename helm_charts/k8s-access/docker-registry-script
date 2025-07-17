@@ -1,0 +1,10 @@
+NS=actions
+# 123123
+kubectl delete secret java-app-gitlab-registry --namespace "$NS"
+
+kubectl create secret docker-registry java-app-gitlab-registry \
+	--docker-server ghcr.io \
+	--docker-email 'm.lesnichenko@proton.me' \
+	--docker-username 'motyaus' \
+	--docker-password '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' \
+	--namespace "$NS"

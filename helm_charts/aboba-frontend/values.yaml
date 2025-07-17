@@ -1,0 +1,12 @@
+replicaCount: 1
+image:
+  repository: ghcr.io/motyaus/frontend
+  tag: "8fac740c7eed2ee79a4e38366bc28c9403f59e4f"
+  pullPolicy: IfNotPresent
+  pullSecrets:
+  - name: java-app-github-registry
+  name: ghcr.io/motyaus/frontend
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

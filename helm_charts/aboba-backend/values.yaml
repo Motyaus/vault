@@ -1,0 +1,15 @@
+image:
+  name: ghcr.io/motyaus/backend
+  pullPolicy: IfNotPresent
+  tag: "8fac740c7eed2ee79a4e38366bc28c9403f59e4f"
+
+replicaCount: 1
+secretName: aboba-backend-secret
+postgresql:
+  host: postgres.dev
+  port: 5432
+  user: java_user
+  password: 1111
+redis:
+  host: redis-master.dev
+  port: 6379

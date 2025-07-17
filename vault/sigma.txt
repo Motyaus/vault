@@ -1,0 +1,32 @@
+
+
+
+kubectl create secret docker-registry java-app-github-registry \
+        --docker-server ghcr.io \
+        --docker-email 'm.lesnichenko@proton.me' \
+        --docker-username 'motyaus' \
+        --docker-password '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' \
+        --namespace "dev" \
+        --create-namespace
+
+
+helm upgrade --install aboba-backend oci://ghcr.io/motyaus/helm-charts/aboba-backend   --version 0.1.0    --namespace dev --create-namespace --set image.repository=ghcr.io/motyaus/backend --set image.tag=8fac740c7eed2ee79a4e38366bc28c9403f59e4f  --set "imagePullSecrets[0].name=java-app-github-registry"
+
+helm upgrade --install aboba-frontend oci://ghcr.io/motyaus/helm-charts/aboba-frontend   --version 0.1.0    --namespace dev --create-namespace --set image.repository=ghcr.io/motyaus/frontend --set image.tag=8fac740c7eed2ee79a4e38366bc28c9403f59e4f  --set "imagePullSecrets[0].name=java-app-github-registry"
+
+helm install vault hashicorp/vault --set="injector.enabled=true" -n vault --create-namespace
+
+vault login hvs.NTn7BA4fb7U9gsGiDVJ4wjbn
+vault policy write aboba-policy aboba-policy.hcl
+
+
+path "secret/data/aboba-backend" {
+  capabilities = ["create", "update", "read", "list"]
+}
+
+
+vault write auth/kubernetes/role/aboba-backend \                                                                                               1 ↵
+  bound_service_account_names=aboba-backend-sa \
+  bound_service_account_namespaces=vault \
+  policies=aboba-backend \
+  ttl=24h

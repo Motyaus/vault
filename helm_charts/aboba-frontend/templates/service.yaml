@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aboba-frontend.fullname" . }}
+  labels:
+    app: {{ include "aboba-frontend.name" . }}
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+  selector:
+    app: {{ include "aboba-frontend.name" . }}

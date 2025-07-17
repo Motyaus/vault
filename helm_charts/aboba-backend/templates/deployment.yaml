@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aboba-backend
+  labels:
+    app: aboba-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: aboba-backend
+  template:
+    metadata:
+      labels:
+        app: aboba-backend
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "aboba-backend" 
+        vault.hashicorp.com/agent-inject-secret-env: "secret/data/aboba-backend"
+        vault.hashicorp.com/agent-inject-template-env: |
+          {{- with secret "secret/data/aboba-backend" -}}
+          export POSTGRES_HOST="{{ .Data.data.POSTGRES_HOST }}"
+          export POSTGRES_PORT="{{ .Data.data.POSTGRES_PORT }}"
+          export POSTGRES_USER="{{ .Data.data.POSTGRES_USER }}"
+          export POSTGRES_PASSWORD="{{ .Data.data.POSTGRES_PASSWORD }}"
+          export REDIS_HOST="{{ .Data.data.REDIS_HOST }}"
+          export REDIS_PORT="{{ .Data.data.REDIS_PORT }}"
+          export REDIS_PASSWORD="{{ .Data.data.REDIS_PASSWORD }}"
+          export FLUENTD_ENABLED="{{ .Data.data.FLUENTD_ENABLED }}"
+          export FLUENTD_HOST="{{ .Data.data.FLUENTD_HOST }}"
+          export FLUENTD_PORT="{{ .Data.data.FLUENTD_PORT }}"
+          export SERVER_PORT="{{ .Data.data.SERVER_PORT }}"
+          export DEBUG="{{ .Data.data.DEBUG }}"
+          {{- end }}
+    spec:
+      serviceAccountName: aboba-backend-sa
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              source /vault/secrets/env && exec java -jar app.jar  
+          ports:
+            - containerPort: 8081
+      imagePullSecrets:
+        - name: java-app-github-registry
